@@ -62,7 +62,7 @@
                             "reflectivity":1.0,
                             "isrefractive":false,
                             "refractiveindex":1.0,
-                             "texture": "/Users/anupriyaagarwal/Desktop/Raytracing/cgr-raytracing/TestSuite/Textures/gradient.ppm"
+                             "texture": "/Users/anupriyaagarwal/Desktop/Raytracing-CW2/CGR-Raytracing-CW2/Code/Textures/gradient.ppm"
                         } 
                 },
                 {
@@ -81,7 +81,7 @@
                             "reflectivity":1.0,
                             "isrefractive":false,
                             "refractiveindex":1.0,
-                            "texture": "/Users/anupriyaagarwal/Desktop/Raytracing/cgr-raytracing/TestSuite/Textures/wood.ppm"
+                            "texture": "/Users/anupriyaagarwal/Desktop/Raytracing-CW2/CGR-Raytracing-CW2/Code/Textures/wood.ppm"
                         } 
                 },
                 {
@@ -100,7 +100,7 @@
                             "reflectivity":1.0,
                             "isrefractive":false,
                             "refractiveindex":1.0,
-                            "texture": "/Users/anupriyaagarwal/Desktop/Raytracing/cgr-raytracing/TestSuite/Textures/wood.ppm"
+                            "texture": "/Users/anupriyaagarwal/Desktop/Raytracing-CW2/CGR-Raytracing-CW2/Code/Textures/wood.ppm"
                         } 
                 },
                 { 
@@ -118,7 +118,7 @@
                             "reflectivity":1.0,
                             "isrefractive":false,
                             "refractiveindex":1.0,
-                            "texture": "/Users/anupriyaagarwal/Desktop/Raytracing/cgr-raytracing/TestSuite/Textures/checkerboard.ppm"
+                            "texture": "/Users/anupriyaagarwal/Desktop/Raytracing-CW2/CGR-Raytracing-CW2/Code/Textures/checkerboard.ppm"
                         } 
                 },
                 { 

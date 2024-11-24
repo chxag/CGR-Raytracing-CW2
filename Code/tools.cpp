@@ -25,8 +25,18 @@ void Tools::readConfig(const std::string &filename)
     json j;
     file >> j;
 
-    nbounces = j["nbounces"];
-    rendermode = j["rendermode"];
+    if (j.contains("nbounces") && j["nbounces"].is_number())
+    {
+        nbounces = j["nbounces"];
+    }
+    if (j.contains("rendermode") && j["rendermode"].is_string())
+    {
+        rendermode = j["rendermode"];
+    }
+
+    
+    //nbounces = j["nbounces"];
+    //rendermode = j["rendermode"];
     camera_type = j["camera"]["type"];
     width = j["camera"]["width"].get<int>();
     height = j["camera"]["height"].get<int>();
@@ -38,13 +48,16 @@ void Tools::readConfig(const std::string &filename)
 
     backgroundcolor = j["scene"]["backgroundcolor"].get<std::vector<float>>();
 
-    for (const auto &light : j["scene"]["lightsources"])
+    if (j["scene"].contains("lightsources"))
     {
-        std::string light_type = light["type"].get<std::string>();
-        std::vector<float> light_position = light["position"].get<std::vector<float>>();
-        std::vector<float> intensity = light["intensity"].get<std::vector<float>>();
+        for (const auto &light : j["scene"]["lightsources"])
+        {
+            std::string light_type = light["type"].get<std::string>();
+            std::vector<float> light_position = light["position"].get<std::vector<float>>();
+            std::vector<float> intensity = light["intensity"].get<std::vector<float>>();
 
-        lightsources.emplace_back(light_type, light_position, intensity);
+            lightsources.emplace_back(light_type, light_position, intensity);
+        }
     }
 
     for (const auto &shape : j["scene"]["shapes"])
@@ -53,83 +66,72 @@ void Tools::readConfig(const std::string &filename)
         {
             std::vector<float> center = {shape["center"][0].get<float>(), shape["center"][1].get<float>(), shape["center"][2].get<float>()};
             float radius = shape["radius"].get<float>();
-            float ks_coeffcient = shape["material"]["ks"].get<float>();
-            float kd_coeffcient = shape["material"]["kd"].get<float>();
-            float specular_exponent = shape["material"]["specularexponent"].get<float>();
-            std::vector<float> diffuse_color = shape["material"]["diffusecolor"].get<std::vector<float>>();
-            std::vector<float> specular_color = shape["material"]["specularcolor"].get<std::vector<float>>();
-            bool is_reflective = shape["material"]["isreflective"].get<bool>();
-            float reflectivity = shape["material"]["reflectivity"].get<float>();
-            bool is_refractive = shape["material"]["isrefractive"].get<bool>();
-            float refractive_index = shape["material"]["refractiveindex"].get<float>();
 
-            
-            Texture *texture = nullptr;
-            if (shape["material"].contains("texture") && shape["material"]["texture"] != nullptr)
+            if (rendermode == "phong" && shape.contains("material"))
             {
-                std::string texture_path = shape["material"]["texture"].get<std::string>();
-                texture = new Texture(texture_path);
-            }
-
-            Material material(ks_coeffcient, kd_coeffcient, specular_exponent, diffuse_color, specular_color, is_reflective, reflectivity, is_refractive, refractive_index, texture);
-
+                material = readMaterial(shape["material"]);
+            } 
             spheres.emplace_back(center, radius, material);
+
         }
+
         if (shape["type"].get<std::string>() == "cylinder")
         {
             std::vector<float> center = {shape["center"][0].get<float>(), shape["center"][1].get<float>(), shape["center"][2].get<float>()};
             float radius = shape["radius"].get<float>();
             std::vector<float> axis = {shape["axis"][0].get<float>(), shape["axis"][1].get<float>(), shape["axis"][2].get<float>()};
             float height = shape["height"].get<float>();
-            float ks_coeffcient = shape["material"]["ks"].get<float>();
-            float kd_coeffcient = shape["material"]["kd"].get<float>();
-            float specular_exponent = shape["material"]["specularexponent"].get<float>();
-            std::vector<float> diffuse_color = shape["material"]["diffusecolor"].get<std::vector<float>>();
-            std::vector<float> specular_color = shape["material"]["specularcolor"].get<std::vector<float>>();
-            bool is_reflective = shape["material"]["isreflective"].get<bool>();
-            float reflectivity = shape["material"]["reflectivity"].get<float>();
-            bool is_refractive = shape["material"]["isrefractive"].get<bool>();
-            float refractive_index = shape["material"]["refractiveindex"].get<float>();
 
-            Texture *texture = nullptr;
-            if (shape["material"].contains("texture") && shape["material"]["texture"] != nullptr)
+            if (rendermode == "phong" && shape.contains("material"))
             {
-                std::string texture_path = shape["material"]["texture"].get<std::string>();
-                texture = new Texture(texture_path);
-            }
-
-            Material material(ks_coeffcient, kd_coeffcient, specular_exponent, diffuse_color, specular_color, is_reflective, reflectivity, is_refractive, refractive_index, texture);
-
+                
+                material = readMaterial(shape["material"]);
+            } 
+            
             cylinders.emplace_back(center, radius, axis, height, material);
         }
+
         if (shape["type"].get<std::string>() == "triangle")
         {
             std::vector<float> v0 = {shape["v0"][0].get<float>(), shape["v0"][1].get<float>(), shape["v0"][2].get<float>()};
             std::vector<float> v1 = {shape["v1"][0].get<float>(), shape["v1"][1].get<float>(), shape["v1"][2].get<float>()};
             std::vector<float> v2 = {shape["v2"][0].get<float>(), shape["v2"][1].get<float>(), shape["v2"][2].get<float>()};
-            float ks_coeffcient = shape["material"]["ks"].get<float>();
-            float kd_coeffcient = shape["material"]["kd"].get<float>();
-            float specular_exponent = shape["material"]["specularexponent"].get<float>();
-            std::vector<float> specular_color = shape["material"]["specularcolor"].get<std::vector<float>>();
-            std::vector<float> diffuse_color = shape["material"]["diffusecolor"].get<std::vector<float>>();
-            bool is_reflective = shape["material"]["isreflective"].get<bool>();
-            float reflectivity = shape["material"]["reflectivity"].get<float>();
-            bool is_refractive = shape["material"]["isrefractive"].get<bool>();
-            float refractive_index = shape["material"]["refractiveindex"].get<float>();
-
-            Texture *texture = nullptr;
-            if (shape["material"].contains("texture") && shape["material"]["texture"] != nullptr)
+        
+            if (rendermode == "phong" && shape.contains("material"))
             {
-                std::string texture_path = shape["material"]["texture"].get<std::string>();
-                texture = new Texture(texture_path);
-            }
-
-            Material material(ks_coeffcient, kd_coeffcient, specular_exponent, diffuse_color, specular_color, is_reflective, reflectivity, is_refractive, refractive_index, texture);
+                material = readMaterial(shape["material"]); 
+            } 
 
             triangles.emplace_back(v0, v1, v2, material);
         }
     }
 };
+
+Material Tools::readMaterial(const json &material_json){
+    try{
+        float ks_coeffcient = material_json.value("ks", 0.0f);
+        float kd_coeffcient = material_json.value("kd", 0.0f);
+        float specular_exponent = material_json.value("specularexponent", 0.0f);
+        std::vector<float> specular_color = material_json.value("specularcolor", std::vector<float>{0.0f, 0.0f, 0.0f});
+        std::vector<float> diffuse_color = material_json.value("diffusecolor", std::vector<float>{0.0f, 0.0f, 0.0f});
+        bool is_reflective = material_json.value("isreflective", false);
+        float reflectivity = material_json.value("reflectivity", 0.0f);
+        bool is_refractive = material_json.value("isrefractive", false);
+        float refractive_index = material_json.value("refractiveindex", 0.0f);
+
+        Texture *texture = nullptr;
+        if (material_json.contains("texture") && !material_json["texture"].is_null())
+        {
+            std::string texture_path = material_json["texture"].get<std::string>();
+            texture = new Texture(texture_path);
+        }
+
+         return Material(ks_coeffcient, kd_coeffcient, specular_exponent, diffuse_color, specular_color, is_reflective, reflectivity, is_refractive, refractive_index, texture);
+    } catch (const std::exception &e){
+        std::cerr << "Error reading material: " << e.what() << std::endl;
+        return Material();
+    }
+}
 
 std::vector<float> Tools::handleReflection(const Ray &ray, const std::vector<float> &intersectionPoint, const std::vector<float> &normal, int depth, const std::string &rendermode)
 {
