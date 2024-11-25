@@ -14,6 +14,7 @@
 #include "vector_utils.h"
 #include "tone_mapping.h"
 #include "shadow.h"
+#include <chrono>
 
 using json = nlohmann::json;
 
@@ -33,6 +34,7 @@ void Tools::readConfig(const std::string &filename)
     {
         rendermode = j["rendermode"];
     }
+
 
     camera_type = j["camera"]["type"];
     width = j["camera"]["width"].get<int>();
@@ -100,6 +102,21 @@ void Tools::readConfig(const std::string &filename)
             } 
 
             triangles.emplace_back(v0, v1, v2, material);
+        }
+    }
+
+    if (j.contains("bvh") && j["bvh"].is_boolean())
+    {
+        useBVH = j["bvh"].get<bool>();
+        if (useBVH && !spheres.empty() && !cylinders.empty() && !triangles.empty()){
+            try {
+                std::cout << "Building BVH..." << std::endl;
+                bvh = std::make_unique<BVH>(spheres, cylinders, triangles);
+                std::cout << "BVH built successfully!" << std::endl;
+            } catch (const std::exception &e) {
+                std::cerr << "Error building BVH: " << e.what() << std::endl;
+                useBVH = false;
+            }
         }
     }
 };
@@ -202,7 +219,7 @@ std::vector<float> Tools::traceRay(const Ray &ray, int depth, const std::string 
 
     if (rendermode == "phong")
     {
-        ShaderResult result = BlinnPhongShader::intersectionTests(ray, spheres, cylinders, triangles, backgroundcolor);
+        ShaderResult result = BlinnPhongShader::intersectionTests(ray, spheres, cylinders, triangles, backgroundcolor, useBVH ? bvh.get() : nullptr);
         std::vector<float> uv_coordinates = result.uv_coordinates;
         intersection_color = result.color;
         bool intersected = result.intersected;
@@ -221,7 +238,7 @@ std::vector<float> Tools::traceRay(const Ray &ray, int depth, const std::string 
                                 ray.direction[1] * normal[1] +
                                 ray.direction[2] * normal[2]);
 
-            std::vector<float> phong_color = BlinnPhongShader::calculateColor(intersectionPoint, normal, viewDir, intersectedMaterial, lightsources, spheres, cylinders, triangles, uv_coordinates);
+            std::vector<float> phong_color = BlinnPhongShader::calculateColor(intersectionPoint, normal, viewDir, intersectedMaterial, lightsources, spheres, cylinders, triangles, uv_coordinates, useBVH ? bvh.get() : nullptr);
 
             std::vector<float> reflectionColor = {0.0f, 0.0f, 0.0f};
             std::vector<float> refractionColor = {0.0f, 0.0f, 0.0f};
@@ -254,6 +271,7 @@ std::vector<float> Tools::traceRay(const Ray &ray, int depth, const std::string 
 
 void Tools::render(PPMWriter &ppmwriter, std::string rendermode)
 {
+    auto start = std::chrono::high_resolution_clock::now();
 
     std::vector<float> forward = {lookAt[0] - position[0], lookAt[1] - position[1], lookAt[2] - position[2]};
     normalize(forward);
@@ -314,4 +332,8 @@ void Tools::render(PPMWriter &ppmwriter, std::string rendermode)
         //     }
         // }
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "Render Time:" << duration.count()/ 1000.0 << "seconds" << std::endl;
 }

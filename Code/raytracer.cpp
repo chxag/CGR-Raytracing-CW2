@@ -5,7 +5,7 @@
 int main()
 {
     Tools tools;
-    tools.readConfig("Jsons/scene.json");
+    tools.readConfig("Jsons/complex.json");
     int width = 1200;
     int height = 800;
     std::vector<unsigned char> backgrounddata = {64, 64, 64};

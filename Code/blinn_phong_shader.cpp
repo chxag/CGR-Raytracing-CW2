@@ -4,6 +4,8 @@
 #include "vector_utils.h"
 #include "shadow.h"
 #include "sphere.h"
+#include <chrono>
+#include <iostream>
 
 std::vector<float> BlinnPhongShader::calculateColor(const std::vector<float> &intersectionPoint,
                                                     const std::vector<float> &normal,
@@ -13,7 +15,8 @@ std::vector<float> BlinnPhongShader::calculateColor(const std::vector<float> &in
                                                     const std::vector<Sphere> &spheres,
                                                     const std::vector<Cylinder> &cylinders,
                                                     const std::vector<Triangle> &triangles,
-                                                    const std::vector<float> uv_coordinates)
+                                                    const std::vector<float> uv_coordinates,
+                                                    const BVH* bvh)
 {
     std::vector<float> color = {0.0f, 0.0f, 0.0f};
 
@@ -37,17 +40,37 @@ std::vector<float> BlinnPhongShader::calculateColor(const std::vector<float> &in
 
     for (const auto &light : lights)
     {
-        bool inShadow = Shadow::isInShadow(intersectionPoint, light, spheres, cylinders, triangles);
-        if (inShadow)
-        {
-            continue;
-        }
         // Light direction
         std::vector<float> lightDir = {
             light.light_position[0] - intersectionPoint[0],
             light.light_position[1] - intersectionPoint[1],
             light.light_position[2] - intersectionPoint[2]};
         normalize(lightDir);
+
+        bool inShadow = false;
+        if (bvh) {
+            // Use BVH for shadow testing
+            float dx = light.light_position[0] - intersectionPoint[0];
+            float dy = light.light_position[1] - intersectionPoint[1];
+            float dz = light.light_position[2] - intersectionPoint[2];
+            float distanceToLight = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+            lightDir = {dx / distanceToLight, dy / distanceToLight, dz / distanceToLight};
+        
+            std::vector<float> shadowRayOrigin = {
+                intersectionPoint[0] + 0.001f* lightDir[0],
+                intersectionPoint[1] + 0.001f * lightDir[1],
+                intersectionPoint[2] + 0.001f * lightDir[2]
+            };
+
+            Ray shadowRay(shadowRayOrigin, lightDir);
+            inShadow = bvh->isOccluded(shadowRay, distanceToLight);
+        } else {
+            inShadow = Shadow::isInShadow(intersectionPoint, light, spheres, cylinders, triangles);
+        }
+
+
+        if (inShadow) continue;
 
         // Diffuse contribution
         float NdotL = normal[0] * lightDir[0] +
@@ -89,8 +112,15 @@ std::vector<float> BlinnPhongShader::calculateColor(const std::vector<float> &in
     return color;
 };
 
-ShaderResult BlinnPhongShader::intersectionTests(const Ray &ray, const std::vector<Sphere> &spheres, const std::vector<Cylinder> &cylinders, const std::vector<Triangle> &triangles, std::vector<float> &backgroundcolor)
+ShaderResult BlinnPhongShader::intersectionTests(const Ray &ray, 
+                                                 const std::vector<Sphere> &spheres, 
+                                                 const std::vector<Cylinder> &cylinders, 
+                                                 const std::vector<Triangle> &triangles, 
+                                                 std::vector<float> &backgroundcolor, 
+                                                 const BVH* bvh)
 {
+
+
     float closestT = std::numeric_limits<float>::max();
     bool intersected = false;
     Material intersectedMaterial;
@@ -98,6 +128,12 @@ ShaderResult BlinnPhongShader::intersectionTests(const Ray &ray, const std::vect
     std::vector<float> uv_coordinates;
     std::vector<float> intersectionPoint;
     std::vector<float> normal;
+
+
+    if (bvh) {
+        // Use BVH if available
+        return bvh->intersect(ray, backgroundcolor);
+    }
 
     for (const auto &sphere : spheres)
     {

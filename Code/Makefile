@@ -8,10 +8,10 @@ CXXFLAGS = -std=c++17 -Wall -Wextra -I/opt/homebrew/include
 INCLUDES = -Iinclude
 
 # Source files
-SRCS = raytracer.cpp tools.cpp sphere.cpp ppmWriter.cpp triangle.cpp cylinder.cpp blinn_phong_shader.cpp binary_shader.cpp vector_utils.cpp shadow.cpp tone_mapping.cpp texture.cpp
+SRCS = raytracer.cpp tools.cpp sphere.cpp ppmWriter.cpp triangle.cpp cylinder.cpp blinn_phong_shader.cpp binary_shader.cpp vector_utils.cpp shadow.cpp tone_mapping.cpp texture.cpp bvh.cpp
 
 # Header files (add header files if needed for dependencies)
-HDRS = sphere.h tools.h triangle.h cylinder.h blinn_phong_shader.h binary_shader.h vector_utils.h shadow.h tone_mapping.h texture.h
+HDRS = sphere.h tools.h triangle.h cylinder.h blinn_phong_shader.h binary_shader.h vector_utils.h shadow.h tone_mapping.h texture.h bvh.h
 
 # Target executable
 TARGET = raytracer

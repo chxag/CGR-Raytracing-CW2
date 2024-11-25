@@ -9,6 +9,7 @@
 #include "triangle.h"
 #include "light.h"
 #include "shader_result.h"
+#include "bvh.h"
 
 class BlinnPhongShader
 {
@@ -21,12 +22,14 @@ public:
                                              const std::vector<Sphere> &spheres, 
                                              const std::vector<Cylinder> &cylinders, 
                                              const std::vector<Triangle> &triangles, 
-                                             const std::vector<float> uv_coordinates);
+                                             const std::vector<float> uv_coordinates,
+                                             const BVH* bvh);
     static ShaderResult intersectionTests(const Ray &ray, 
                                           const std::vector<Sphere> &spheres, 
                                           const std::vector<Cylinder> &cylinders, 
                                           const std::vector<Triangle> &triangles, 
-                                          std::vector<float> &backgroundcolor);
+                                          std::vector<float> &backgroundcolor,
+                                          const BVH* bvh);
 };
 
 #endif

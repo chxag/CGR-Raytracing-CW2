@@ -9,6 +9,7 @@
 #include "ppmWriter.h"
 #include "light.h"
 #include <nlohmann/json.hpp>
+#include "bvh.h"
 
 using json = nlohmann::json;
 
@@ -47,6 +48,8 @@ private:
 
     float max_value = 0.0f;
 
+    bool useBVH;
+    std::unique_ptr<BVH> bvh;
 
 };
 
