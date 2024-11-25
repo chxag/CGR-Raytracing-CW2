@@ -34,9 +34,6 @@ void Tools::readConfig(const std::string &filename)
         rendermode = j["rendermode"];
     }
 
-    
-    //nbounces = j["nbounces"];
-    //rendermode = j["rendermode"];
     camera_type = j["camera"]["type"];
     width = j["camera"]["width"].get<int>();
     height = j["camera"]["height"].get<int>();
