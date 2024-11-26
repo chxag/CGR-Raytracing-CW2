@@ -329,9 +329,26 @@ void Tools::render(PPMWriter &ppmwriter, std::string rendermode)
             pixel_color[1] *= inv_samples;
             pixel_color[2] *= inv_samples;
 
-            pixel_color[0] = std::min(std::max(pixel_color[0], 0.0f), 1.0f);
-            pixel_color[1] = std::min(std::max(pixel_color[1], 0.0f), 1.0f);
-            pixel_color[2] = std::min(std::max(pixel_color[2], 0.0f), 1.0f);
+                        // Add debug output for some pixels
+            if (x == width/2 && y == height/2) {
+                std::cout << "Center pixel before tone mapping: "
+                          << pixel_color[0] << ", "
+                          << pixel_color[1] << ", "
+                          << pixel_color[2] << std::endl;
+            }
+
+            // pixel_color[0] = std::min(std::max(pixel_color[0], 0.0f), 1.0f);
+            // pixel_color[1] = std::min(std::max(pixel_color[1], 0.0f), 1.0f);
+            // pixel_color[2] = std::min(std::max(pixel_color[2], 0.0f), 1.0f);
+            
+            pixel_color = linearToneMapping(pixel_color);
+
+            if (x == width/2 && y == height/2) {
+                std::cout << "Center pixel after tone mapping: "
+                          << pixel_color[0] << ", "
+                          << pixel_color[1] << ", "
+                          << pixel_color[2] << std::endl;
+            }
 
             ppmwriter.getPixelData(x, y, {static_cast<unsigned char>(pixel_color[0] * 255), static_cast<unsigned char>(pixel_color[1] * 255), static_cast<unsigned char>(pixel_color[2] * 255)});
         }

@@ -1,0 +1,14 @@
+- Image writing: implemented and demonstrated
+- Virtual pinhole camera: implemented and demonstrated
+- Intersection testing: implemented and demonstrated
+- Blinn-Phong shading: implemented and demonstrated
+- Shadows: implemented and demonstrated
+- Tone mapping: implemented and demonstrated
+- Reflection: implemented and demonstrated
+- Refraction: implemented and demonstrated
+- Textures: implemented and demonstrated
+- Acceleration heirarchy: implemented and demonstrated
+- Pixel sampling: implemented and demonstrated
+- Lens sampling: implemented and demonstrated
+- BRDF sampling: unimplemented and not demonstrated
+- Light sampling: unimplemented and not demonstrated

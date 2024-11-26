@@ -46,8 +46,6 @@ private:
 
     Material material;
 
-    float max_value = 0.0f;
-
     bool useBVH;
     std::unique_ptr<BVH> bvh;
 
