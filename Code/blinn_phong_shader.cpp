@@ -28,7 +28,7 @@ std::vector<float> BlinnPhongShader::calculateColor(const std::vector<float> &in
     }
 
     // Ambient light contribution
-    float ambient_intensity = 0.4f;
+    float ambient_intensity = 0.2f;
     std::vector<float> ambient_light = {
         ambient_intensity * baseColor[0],
         ambient_intensity * baseColor[1],

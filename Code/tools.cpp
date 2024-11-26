@@ -15,6 +15,7 @@
 #include "tone_mapping.h"
 #include "shadow.h"
 #include <chrono>
+#include <random>
 
 using json = nlohmann::json;
 
@@ -287,50 +288,54 @@ void Tools::render(PPMWriter &ppmwriter, std::string rendermode)
     float aspectRatio = static_cast<float>(width) / height;
     float scale = tan(fov * 0.5 * pi / 180.0f);
 
+    const int samples = 16;
+    const int gridSize = static_cast<int>(sqrt(samples));
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0.0, 1.0);
+    
+    #pragma omp parallel for collapse(2) schedule(dynamic)
     for (int y = 0; y < height; ++y)
     {
         for (int x = 0; x < width; ++x)
         {
-            float u = (2 * (x + 0.5f) / width - 1) * aspectRatio * scale;
-            float v = (1 - 2 * (y + 0.5f) / height) * scale;
+            std::vector<float> pixel_color = {0.0f, 0.0f, 0.0f};
 
-            std::vector<float> direction = {right[0] * u + up[0] * v + forward[0],
-                                            right[1] * u + up[1] * v + forward[1],
-                                            right[2] * u + up[2] * v + forward[2]};
-            normalize(direction);
-            Ray ray(position, direction);
+            for (int py = 0; py < gridSize; py++){
+                for (int px = 0; px < gridSize; px++){
+                    float random_u = (px + dis(gen)) / gridSize;
+                    float random_v = (py + dis(gen)) / gridSize;
 
-            std::vector<float> intersection_color = traceRay(ray, 0, rendermode);
+                    float u = (2 * (x + random_u) / width - 1) * aspectRatio * scale;
+                    float v = (1 - 2 * (y + random_v) / height) * scale;
 
-            max_value = std::max({max_value, intersection_color[0], intersection_color[1], intersection_color[2]});
+                    std::vector<float> direction = {right[0] * u + up[0] * v + forward[0],
+                                                    right[1] * u + up[1] * v + forward[1],
+                                                    right[2] * u + up[2] * v + forward[2]};
+                    normalize(direction);
+                    Ray ray(position, direction);
 
-            ppmwriter.getPixelData(x, y, {static_cast<unsigned char>(intersection_color[0] * 255), static_cast<unsigned char>(intersection_color[1] * 255), static_cast<unsigned char>(intersection_color[2] * 255)});
+                    std::vector<float> intersection_color_sample = traceRay(ray, 0, rendermode);
+
+                    pixel_color[0] += intersection_color_sample[0];
+                    pixel_color[1] += intersection_color_sample[1];
+                    pixel_color[2] += intersection_color_sample[2];
+                }
+            }
+
+            float inv_samples = 1.0f / (gridSize * gridSize);
+            pixel_color[0] *= inv_samples;
+            pixel_color[1] *= inv_samples;
+            pixel_color[2] *= inv_samples;
+
+            pixel_color[0] = std::min(std::max(pixel_color[0], 0.0f), 1.0f);
+            pixel_color[1] = std::min(std::max(pixel_color[1], 0.0f), 1.0f);
+            pixel_color[2] = std::min(std::max(pixel_color[2], 0.0f), 1.0f);
+
+            ppmwriter.getPixelData(x, y, {static_cast<unsigned char>(pixel_color[0] * 255), static_cast<unsigned char>(pixel_color[1] * 255), static_cast<unsigned char>(pixel_color[2] * 255)});
         }
 
-        // for (int y = 0; y < height; ++y)
-        // {
-        //     for (int x = 0; x < width; ++x)
-        //     {
-        //         float u = (2 * (x + 0.5f) / width - 1) * aspectRatio * scale;
-        //         float v = (1 - 2 * (y + 0.5f) / height) * scale;
-
-        //         std::vector<float> direction = {right[0] * u + up[0] * v + forward[0],
-        //                                         right[1] * u + up[1] * v + forward[1],
-        //                                         right[2] * u + up[2] * v + forward[2]};
-        //         normalize(direction);
-        //         Ray ray(position, direction);
-
-        //         std::vector<float> intersection_color = traceRay(ray, 0, rendermode);
-
-        //         std::vector<float> tone_mapped_color = linearToneMapping(intersection_color, max_value);
-
-        //         ppmwriter.getPixelData(x,y, {
-        //             static_cast<unsigned char>(tone_mapped_color[0] * 255),
-        //             static_cast<unsigned char>(tone_mapped_color[1] * 255),
-        //             static_cast<unsigned char>(tone_mapped_color[2] * 255)
-        //         });
-        //     }
-        // }
     }
 
     auto end = std::chrono::high_resolution_clock::now();

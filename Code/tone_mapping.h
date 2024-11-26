@@ -3,6 +3,6 @@
 
 #include <vector>
 
-std::vector<float> linearToneMapping(const std::vector<float> &color, float max_value);
+std::vector<float> linearToneMapping(const std::vector<float> &color);
 
 #endif
