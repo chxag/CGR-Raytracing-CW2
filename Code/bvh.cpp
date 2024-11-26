@@ -69,29 +69,34 @@ std::unique_ptr<BVHNode> BVH::buildNode(std::vector<Sphere>& spheres,
         
         // Add cylinder bounds
         for (const auto& cylinder : cylinders) {
+            std::vector<float> bottom = {
+                cylinder.center[0] - cylinder.axis[0] * cylinder.height/2,
+                cylinder.center[1] - cylinder.axis[1] * cylinder.height/2,
+                cylinder.center[2] - cylinder.axis[2] * cylinder.height/2
+            };
             std::vector<float> top = {
-                cylinder.center[0] + cylinder.height * cylinder.axis[0],
-                cylinder.center[1] + cylinder.height * cylinder.axis[1],
-                cylinder.center[2] + cylinder.height * cylinder.axis[2]
+                cylinder.center[0] + cylinder.axis[0] * cylinder.height/2,
+                cylinder.center[1] + cylinder.axis[1] * cylinder.height/2,
+                cylinder.center[2] + cylinder.axis[2] * cylinder.height/2
             };
             for (int i = 0; i < 3; i++) {
-                node->bounds.min_point[i] = std::min(node->bounds.min_point[i], std::min(cylinder.center[i], top[i]) - cylinder.radius);
-                node->bounds.max_point[i] = std::max(node->bounds.max_point[i], std::max(cylinder.center[i], top[i]) + cylinder.radius);
+                node->bounds.min_point[i] = std::min({node->bounds.min_point[i], bottom[i] - cylinder.radius, top[i] - cylinder.radius});
+                node->bounds.max_point[i] = std::max({node->bounds.max_point[i], bottom[i] + cylinder.radius, top[i] + cylinder.radius});
             }
         }
         
         // Add triangle bounds
         for (const auto& triangle : triangles) {
             for (int i = 0; i < 3; i++) {
-                node->bounds.min_point[i] = std::min(node->bounds.min_point[i], std::min({triangle.v0[i], triangle.v1[i], triangle.v2[i]}));
-                node->bounds.max_point[i] = std::max(node->bounds.max_point[i], std::max({triangle.v0[i], triangle.v1[i], triangle.v2[i]}));
+                node->bounds.min_point[i] = std::min({node->bounds.min_point[i], triangle.v0[i], triangle.v1[i], triangle.v2[i]});
+                node->bounds.max_point[i] = std::max({node->bounds.max_point[i], triangle.v0[i], triangle.v1[i], triangle.v2[i]});
             }
         }
     }
     
     // Leaf node criteria
     size_t total_objects = spheres.size() + cylinders.size() + triangles.size();
-    if (total_objects <= 4) {  // Small leaf size for better splitting
+    if (total_objects <= 8) {  // Increased leaf size
         node->spheres = std::move(spheres);
         node->cylinders = std::move(cylinders);
         node->triangles = std::move(triangles);
@@ -109,15 +114,13 @@ std::unique_ptr<BVHNode> BVH::buildNode(std::vector<Sphere>& spheres,
         }
     }
     
-    // Split point
-    float split = node->bounds.min_point[axis] + extent * 0.5f;
+    float split = (node->bounds.min_point[axis] + node->bounds.max_point[axis]) * 0.5f;
     
-    // Partition objects
     std::vector<Sphere> left_spheres, right_spheres;
     std::vector<Cylinder> left_cylinders, right_cylinders;
     std::vector<Triangle> left_triangles, right_triangles;
     
-    // Split spheres
+    // Split objects based on their centers
     for (auto& sphere : spheres) {
         if (sphere.center[axis] < split) {
             left_spheres.push_back(sphere);
@@ -126,7 +129,6 @@ std::unique_ptr<BVHNode> BVH::buildNode(std::vector<Sphere>& spheres,
         }
     }
     
-    // Split cylinders
     for (auto& cylinder : cylinders) {
         if (cylinder.center[axis] < split) {
             left_cylinders.push_back(cylinder);
@@ -135,7 +137,6 @@ std::unique_ptr<BVHNode> BVH::buildNode(std::vector<Sphere>& spheres,
         }
     }
     
-    // Split triangles
     for (auto& triangle : triangles) {
         float center = (triangle.v0[axis] + triangle.v1[axis] + triangle.v2[axis]) / 3.0f;
         if (center < split) {
@@ -146,39 +147,46 @@ std::unique_ptr<BVHNode> BVH::buildNode(std::vector<Sphere>& spheres,
     }
     
     // Handle degenerate splits
-    // Handle degenerate splits
     if (left_spheres.empty() && left_cylinders.empty() && left_triangles.empty()) {
-        // Move half of each type to the left
-        size_t mid_spheres = spheres.size() / 2;
-        size_t mid_cylinders = cylinders.size() / 2;
-        size_t mid_triangles = triangles.size() / 2;
+        size_t mid = total_objects / 2;
+        size_t count = 0;
         
-        left_spheres = std::vector<Sphere>(spheres.begin(), spheres.begin() + mid_spheres);
-        right_spheres = std::vector<Sphere>(spheres.begin() + mid_spheres, spheres.end());
-        
-        left_cylinders = std::vector<Cylinder>(cylinders.begin(), cylinders.begin() + mid_cylinders);
-        right_cylinders = std::vector<Cylinder>(cylinders.begin() + mid_cylinders, cylinders.end());
-        
-        left_triangles = std::vector<Triangle>(triangles.begin(), triangles.begin() + mid_triangles);
-        right_triangles = std::vector<Triangle>(triangles.begin() + mid_triangles, triangles.end());
-        
+        while (count < mid && !right_spheres.empty()) {
+            left_spheres.push_back(right_spheres.back());
+            right_spheres.pop_back();
+            count++;
+        }
+        while (count < mid && !right_cylinders.empty()) {
+            left_cylinders.push_back(right_cylinders.back());
+            right_cylinders.pop_back();
+            count++;
+        }
+        while (count < mid && !right_triangles.empty()) {
+            left_triangles.push_back(right_triangles.back());
+            right_triangles.pop_back();
+            count++;
+        }
     } else if (right_spheres.empty() && right_cylinders.empty() && right_triangles.empty()) {
-        // Move half of each type to the right
-        size_t mid_spheres = left_spheres.size() / 2;
-        size_t mid_cylinders = left_cylinders.size() / 2;
-        size_t mid_triangles = left_triangles.size() / 2;
+        size_t mid = total_objects / 2;
+        size_t count = 0;
         
-        right_spheres = std::vector<Sphere>(left_spheres.begin() + mid_spheres, left_spheres.end());
-        left_spheres = std::vector<Sphere>(left_spheres.begin(), left_spheres.begin() + mid_spheres);
-        
-        right_cylinders = std::vector<Cylinder>(left_cylinders.begin() + mid_cylinders, left_cylinders.end());
-        left_cylinders = std::vector<Cylinder>(left_cylinders.begin(), left_cylinders.begin() + mid_cylinders);
-        
-        right_triangles = std::vector<Triangle>(left_triangles.begin() + mid_triangles, left_triangles.end());
-        left_triangles = std::vector<Triangle>(left_triangles.begin(), left_triangles.begin() + mid_triangles);
+        while (count < mid && !left_spheres.empty()) {
+            right_spheres.push_back(left_spheres.back());
+            left_spheres.pop_back();
+            count++;
+        }
+        while (count < mid && !left_cylinders.empty()) {
+            right_cylinders.push_back(left_cylinders.back());
+            left_cylinders.pop_back();
+            count++;
+        }
+        while (count < mid && !left_triangles.empty()) {
+            right_triangles.push_back(left_triangles.back());
+            left_triangles.pop_back();
+            count++;
+        }
     }
     
-    // Recursively build children
     node->left = buildNode(left_spheres, left_cylinders, left_triangles);
     node->right = buildNode(right_spheres, right_cylinders, right_triangles);
     

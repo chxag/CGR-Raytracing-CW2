@@ -5,7 +5,7 @@
 int main()
 {
     Tools tools;
-    tools.readConfig("Jsons/mirror_image.json");
+    tools.readConfig("Jsons/simple_phong.json");
     int width = 1200;
     int height = 800;
     std::vector<unsigned char> backgrounddata = {64, 64, 64};
