@@ -38,6 +38,10 @@ private:
     float fov;
     float exposure;
 
+    bool lens_sampling;
+    float aperture;
+    float focalDistance;
+
     std::vector<float>  backgroundcolor;
     std::vector<Sphere> spheres;
     std::vector<Cylinder> cylinders;

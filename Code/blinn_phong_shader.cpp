@@ -97,8 +97,6 @@ std::vector<float> BlinnPhongShader::calculateColor(const std::vector<float> &in
             }
             
             if (inShadow) continue;
-
-            // inShadow = Shadow::isInShadow(shadowRayOrigin, light, spheres, cylinders, triangles);
         }
 
 
@@ -135,11 +133,6 @@ std::vector<float> BlinnPhongShader::calculateColor(const std::vector<float> &in
         color[1] += diffuse[1] + specular[1];
         color[2] += diffuse[2] + specular[2];
     }
-
-    // Clamp color values to [0, 1]
-    // color[0] = std::min(color[0], 1.0f);
-    // color[1] = std::min(color[1], 1.0f);
-    // color[2] = std::min(color[2], 1.0f);
 
     return color;
 };

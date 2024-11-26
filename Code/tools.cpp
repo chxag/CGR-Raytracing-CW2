@@ -46,6 +46,10 @@ void Tools::readConfig(const std::string &filename)
     fov = j["camera"]["fov"].get<float>();
     exposure = j["camera"]["exposure"].get<float>();
 
+    if (j.contains("lens_sampling") && j["lens_sampling"].is_boolean()){
+        lens_sampling = j["lens_sampling"].get<bool>();
+    }
+
     backgroundcolor = j["scene"]["backgroundcolor"].get<std::vector<float>>();
 
     if (j["scene"].contains("lightsources"))
@@ -294,7 +298,8 @@ void Tools::render(PPMWriter &ppmwriter, std::string rendermode)
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0.0, 1.0);
-    
+
+
     #pragma omp parallel for collapse(2) schedule(dynamic)
     for (int y = 0; y < height; ++y)
     {
@@ -302,25 +307,70 @@ void Tools::render(PPMWriter &ppmwriter, std::string rendermode)
         {
             std::vector<float> pixel_color = {0.0f, 0.0f, 0.0f};
 
-            for (int py = 0; py < gridSize; py++){
-                for (int px = 0; px < gridSize; px++){
-                    float random_u = (px + dis(gen)) / gridSize;
-                    float random_v = (py + dis(gen)) / gridSize;
+            if (lens_sampling){
+                aperture = 0.01f;
+                focalDistance = 10.0f;
+                
+                for(int py = 0; py < gridSize; py++){
+                    for(int px = 0; px < gridSize; px++){
+                        float random_u = (px + dis(gen)) / gridSize;
+                        float random_v = (py + dis(gen)) / gridSize;
 
-                    float u = (2 * (x + random_u) / width - 1) * aspectRatio * scale;
-                    float v = (1 - 2 * (y + random_v) / height) * scale;
+                        float u = (2 * (x + random_u) / width - 1) * aspectRatio * scale;
+                        float v = (1 - 2 * (y + random_v) / height) * scale;
 
-                    std::vector<float> direction = {right[0] * u + up[0] * v + forward[0],
-                                                    right[1] * u + up[1] * v + forward[1],
-                                                    right[2] * u + up[2] * v + forward[2]};
-                    normalize(direction);
-                    Ray ray(position, direction);
+                        std::vector<float> focusPoint = {
+                            position[0] + (right[0] * u + up[0] * v + forward[0]) * focalDistance,
+                            position[1] + (right[1] * u + up[1] * v + forward[1]) * focalDistance,
+                            position[2] + (right[2] * u + up[2] * v + forward[2]) * focalDistance
+                        };
+                        
+                        float r = aperture * sqrt(dis(gen));
+                        float theta = 2 * M_PI * dis(gen);
 
-                    std::vector<float> intersection_color_sample = traceRay(ray, 0, rendermode);
+                        std::vector<float> rayOrigin = {
+                            position[0] + r * cos(theta) * right[0] + r * sin(theta) * up[0],
+                            position[1] + r * cos(theta) * right[1] + r * sin(theta) * up[1],
+                            position[2] + r * cos(theta) * right[2] + r * sin(theta) * up[2]
+                        };
 
-                    pixel_color[0] += intersection_color_sample[0];
-                    pixel_color[1] += intersection_color_sample[1];
-                    pixel_color[2] += intersection_color_sample[2];
+                        std::vector<float> direction = {
+                            focusPoint[0] - rayOrigin[0],
+                            focusPoint[1] - rayOrigin[1],
+                            focusPoint[2] - rayOrigin[2]
+                        };
+                        normalize(direction);
+
+                        Ray ray(rayOrigin, direction);
+                        std::vector<float> intersection_color_sample = traceRay(ray, 0, rendermode);
+
+                        pixel_color[0] += intersection_color_sample[0];
+                        pixel_color[1] += intersection_color_sample[1];
+                        pixel_color[2] += intersection_color_sample[2];
+                    }
+                }
+            } else {
+
+                for (int py = 0; py < gridSize; py++){
+                    for (int px = 0; px < gridSize; px++){
+                        float random_u = (px + dis(gen)) / gridSize;
+                        float random_v = (py + dis(gen)) / gridSize;
+
+                        float u = (2 * (x + random_u) / width - 1) * aspectRatio * scale;
+                        float v = (1 - 2 * (y + random_v) / height) * scale;
+
+                        std::vector<float> direction = {right[0] * u + up[0] * v + forward[0],
+                                                        right[1] * u + up[1] * v + forward[1],
+                                                        right[2] * u + up[2] * v + forward[2]};
+                        normalize(direction);
+                        Ray ray(position, direction);
+
+                        std::vector<float> intersection_color_sample = traceRay(ray, 0, rendermode);
+
+                        pixel_color[0] += intersection_color_sample[0];
+                        pixel_color[1] += intersection_color_sample[1];
+                        pixel_color[2] += intersection_color_sample[2];
+                    }
                 }
             }
 
@@ -329,26 +379,7 @@ void Tools::render(PPMWriter &ppmwriter, std::string rendermode)
             pixel_color[1] *= inv_samples;
             pixel_color[2] *= inv_samples;
 
-                        // Add debug output for some pixels
-            if (x == width/2 && y == height/2) {
-                std::cout << "Center pixel before tone mapping: "
-                          << pixel_color[0] << ", "
-                          << pixel_color[1] << ", "
-                          << pixel_color[2] << std::endl;
-            }
-
-            // pixel_color[0] = std::min(std::max(pixel_color[0], 0.0f), 1.0f);
-            // pixel_color[1] = std::min(std::max(pixel_color[1], 0.0f), 1.0f);
-            // pixel_color[2] = std::min(std::max(pixel_color[2], 0.0f), 1.0f);
-            
             pixel_color = linearToneMapping(pixel_color);
-
-            if (x == width/2 && y == height/2) {
-                std::cout << "Center pixel after tone mapping: "
-                          << pixel_color[0] << ", "
-                          << pixel_color[1] << ", "
-                          << pixel_color[2] << std::endl;
-            }
 
             ppmwriter.getPixelData(x, y, {static_cast<unsigned char>(pixel_color[0] * 255), static_cast<unsigned char>(pixel_color[1] * 255), static_cast<unsigned char>(pixel_color[2] * 255)});
         }
