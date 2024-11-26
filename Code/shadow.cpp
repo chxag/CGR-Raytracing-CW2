@@ -10,7 +10,7 @@ bool Shadow::isInShadow(const std::vector<float>& point, const Light& light, con
     };
     normalize(lightDir);
 
-    float shadowBias = 0.001f;
+    float shadowBias = 0.01f;
     std::vector<float> shadowRayOrigin = {
         point[0] + shadowBias * lightDir[0],
         point[1] + shadowBias * lightDir[1],
