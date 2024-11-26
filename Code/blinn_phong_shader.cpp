@@ -212,11 +212,17 @@ ShaderResult BlinnPhongShader::intersectionTests(const Ray &ray,
             // Project point onto axis
             float dot = pc[0] * cylinder.axis[0] + pc[1] * cylinder.axis[1] + pc[2] * cylinder.axis[2];
 
-            // Calculate normal as point minus its projection on axis
-            normal = {
-                pc[0] - dot * cylinder.axis[0],
-                pc[1] - dot * cylinder.axis[1],
-                pc[2] - dot * cylinder.axis[2]};
+            if (std::abs(dot - cylinder.height / 2) < 0.001f){
+                normal = cylinder.axis;
+            } else if (std::abs(dot + cylinder.height / 2) < 0.001f){
+                normal = {-cylinder.axis[0], -cylinder.axis[1], -cylinder.axis[2]};
+            } else {
+                // Calculate normal as point minus its projection on axis
+                normal = {
+                    pc[0] - dot * cylinder.axis[0],
+                    pc[1] - dot * cylinder.axis[1],
+                    pc[2] - dot * cylinder.axis[2]};
+            }
             normalize(normal);
             uv_coordinates = cylinder.getUV(intersectionPoint);
         }
