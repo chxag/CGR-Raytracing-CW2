@@ -45,11 +45,11 @@ std::vector<float> BlinnPhongShader::calculateColor(const std::vector<float> &in
             light.light_position[0] - intersectionPoint[0],
             light.light_position[1] - intersectionPoint[1],
             light.light_position[2] - intersectionPoint[2]};
-        normalize(lightDir);
         float distanceToLight = std::sqrt(lightDir[0] * lightDir[0] +
                                           lightDir[1] * lightDir[1] +
                                           lightDir[2] * lightDir[2]);
 
+        normalize(lightDir);
         bool inShadow = false;
         if (bvh) {
             // Use BVH for shadow testing
