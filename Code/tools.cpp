@@ -309,15 +309,22 @@ void Tools::render(PPMWriter &ppmwriter, std::string rendermode)
 
             if (lens_sampling){
                 aperture = 0.01f;
-                focalDistance = 10.0f;
+                focalDistance = 5.0f;
                 
                 for(int py = 0; py < gridSize; py++){
                     for(int px = 0; px < gridSize; px++){
-                        float random_u = (px + dis(gen)) / gridSize;
-                        float random_v = (py + dis(gen)) / gridSize;
 
-                        float u = (2 * (x + random_u) / width - 1) * aspectRatio * scale;
-                        float v = (1 - 2 * (y + random_v) / height) * scale;
+                        float cellX = px + 0.5f;
+                        float cellY = py + 0.5f;
+                        
+                        float offsetX = (dis(gen) - 0.5f) * 0.9f;
+                        float offsetY = (dis(gen) - 0.5f) * 0.9f;
+
+                        float sampleX = (cellX + offsetX) / gridSize;
+                        float sampleY = (cellY + offsetY) / gridSize;
+
+                        float u = (2 * (x + sampleX) / width - 1) * aspectRatio * scale;
+                        float v = (1 - 2 * (y + sampleY) / height) * scale;
 
                         std::vector<float> focusPoint = {
                             position[0] + (right[0] * u + up[0] * v + forward[0]) * focalDistance,
@@ -353,11 +360,17 @@ void Tools::render(PPMWriter &ppmwriter, std::string rendermode)
 
                 for (int py = 0; py < gridSize; py++){
                     for (int px = 0; px < gridSize; px++){
-                        float random_u = (px + dis(gen)) / gridSize;
-                        float random_v = (py + dis(gen)) / gridSize;
+                        float cellX = px + 0.5f;
+                        float cellY = py + 0.5f;
 
-                        float u = (2 * (x + random_u) / width - 1) * aspectRatio * scale;
-                        float v = (1 - 2 * (y + random_v) / height) * scale;
+                        float offsetX = (dis(gen) - 0.5f) * 0.9f;
+                        float offsetY = (dis(gen) - 0.5f) * 0.9f;
+
+                        float sampleX = (cellX + offsetX) / gridSize;
+                        float sampleY = (cellY + offsetY) / gridSize;
+
+                        float u = (2 * (x + sampleX)/ width - 1) * aspectRatio * scale;
+                        float v = (1 - 2 * (y + sampleY) / height) * scale;
 
                         std::vector<float> direction = {right[0] * u + up[0] * v + forward[0],
                                                         right[1] * u + up[1] * v + forward[1],
