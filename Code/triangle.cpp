@@ -62,28 +62,23 @@ bool Triangle::intersectTriangle(const Ray& ray, float& t) const{
 }
 
 // Get the uv coordinates of the intersection point
-std::vector<float> Triangle::getUV(const std::vector<float>& intersectionPoint) const{
-    //Calculate the edge vectors 
-    std::vector<float> e1 = {v1[0] - v0[0], v1[1] - v0[1],  v1[2] - v0[2]};
-    std::vector<float> e2 = {v2[0] - v0[0], v2[1] - v0[1],  v2[2] - v0[2]};
-
-    // Calculate the vector from the intersection point to the triangle vertex
+std::vector<float> Triangle::getUV(const std::vector<float>& intersectionPoint) const {
+    // Calculate vectors from v0 to intersection point and other vertices
     std::vector<float> v0p = {intersectionPoint[0] - v0[0], intersectionPoint[1] - v0[1], intersectionPoint[2] - v0[2]};
+    std::vector<float> e1 = {v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]};
+    std::vector<float> e2 = {v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]};
 
-    // Calculate the dot products
-    float d_e1_e1 = e1[0] * e1[0] + e1[1] * e1[1] + e1[2] * e1[2];
-    float d_e1_e2 = e1[0] * e2[0] + e1[1] * e2[1] + e1[2] * e2[2];
-    float d_e2_e2 = e2[0] * e2[0] + e2[1] * e2[1] + e2[2] * e2[2];
-    float d_e1_v0p = e1[0] * v0p[0] + e1[1] * v0p[1] + e1[2] * v0p[2];
-    float d_e2_v0p = e2[0] * v0p[0] + e2[1] * v0p[1] + e2[2] * v0p[2];
+    // Calculate dot products
+    float d00 = e1[0] * e1[0] + e1[1] * e1[1] + e1[2] * e1[2];
+    float d01 = e1[0] * e2[0] + e1[1] * e2[1] + e1[2] * e2[2];
+    float d11 = e2[0] * e2[0] + e2[1] * e2[1] + e2[2] * e2[2];
+    float d20 = v0p[0] * e1[0] + v0p[1] * e1[1] + v0p[2] * e1[2];
+    float d21 = v0p[0] * e2[0] + v0p[1] * e2[1] + v0p[2] * e2[2];
 
-    // Calculate the denominator
-    float denom = d_e1_e1 * d_e2_e2 - d_e1_e2 * d_e1_e2;
-
-    // Calculate the u coordinate   
-    float u = (d_e1_e2 * d_e2_v0p - d_e2_e2 * d_e1_v0p) / denom;
-    // Calculate the v coordinate
-    float v = (d_e1_e1 * d_e2_v0p - d_e1_e2 * d_e1_v0p) / denom;
+    float denom = d00 * d11 - d01 * d01;
+    float v = (d11 * d20 - d01 * d21) / denom;
+    float w = (d00 * d21 - d01 * d20) / denom;
+    float u = 1.0f - v - w;
 
     return {u, v};
 }

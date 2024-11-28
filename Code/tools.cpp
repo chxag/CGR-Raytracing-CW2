@@ -125,7 +125,7 @@ void Tools::readConfig(const std::string &filename)
     {
         useBVH = j["bvh"].get<bool>();
         // Check if the BVH is enabled and there are shapes to build the BVH with
-        if (useBVH && !spheres.empty() && !cylinders.empty() && !triangles.empty()){
+        if (useBVH && (!spheres.empty() || !cylinders.empty() || !triangles.empty())){
             try {
                 std::cout << "Building BVH..." << std::endl;
                 bvh = std::make_unique<BVH>(spheres, cylinders, triangles);
@@ -186,10 +186,11 @@ std::vector<float> Tools::handleReflection(const Ray &ray, const std::vector<flo
 };
 
 // Handle refraction
-std::vector<float> Tools::handleRefraction(const Ray &ray, const std::vector<float> &intersectionPoint, std::vector<float> &normal, const Material &material, float cos_theta, int depth, const std::string &rendermode)
+std::vector<float> Tools::handleRefraction(const Ray &ray, const std::vector<float> &intersectionPoint, std::vector<float> &normal, const Material &material, float cos_theta, int depth, const std::string &rendermode, const std::vector<float> &uv_coordinates)
 {
     // Calculate the ratio of the refractive indices
     float eta_ratio = material.refractive_index;
+
     // If the cosine of the angle is negative, the ray is entering the material
     if (cos_theta < 0.0f)
     {
@@ -198,8 +199,10 @@ std::vector<float> Tools::handleRefraction(const Ray &ray, const std::vector<flo
         normal[2] = -normal[2];
         eta_ratio = 1.0f / eta_ratio;
     }
+
     // Calculate the refracted direction
     std::vector<float> refractedDir = refract(ray.direction, normal, eta_ratio);
+    
     // If the refracted direction is not empty
     if (!refractedDir.empty())
     {
@@ -207,17 +210,26 @@ std::vector<float> Tools::handleRefraction(const Ray &ray, const std::vector<flo
         normalize(refractedDir);
         // Calculate the refraction point
         std::vector<float> refractionPoint{
-            intersectionPoint[0] + 0.001f * refractedDir[0],
-            intersectionPoint[1] + 0.001f * refractedDir[1],
-            intersectionPoint[2] + 0.001f * refractedDir[2]};
+            intersectionPoint[0] + 0.00001f * refractedDir[0],
+            intersectionPoint[1] + 0.00001f * refractedDir[1],
+            intersectionPoint[2] + 0.00001f * refractedDir[2]};
         // Create a new ray with the refraction point and direction
         Ray refractionRay(refractionPoint, refractedDir);
-        // Trace the refraction ray
-        return traceRay(refractionRay, depth + 1, rendermode);
+        auto nextColor = traceRay(refractionRay, depth + 1, rendermode);
+
+        if ((cos_theta < 0.0f) && material.texture != nullptr){
+            std::vector<unsigned char> textureColor = material.texture->getTexel(uv_coordinates[0], uv_coordinates[1]);
+
+            for (int i = 0; i < 3; ++i){
+                float texval = static_cast<float>(textureColor[i]) / 255.0f;
+                nextColor[i] = nextColor[i] * (1.0f - material.refractive_index) + texval * material.refractive_index;
+            }
+        }
+        return nextColor;
     }
     // If the refracted direction is empty, return black
     return {0.0f, 0.0f, 0.0f};
-};
+}
 
 // Combine the colors
 std::vector<float> Tools::combineColors(const std::vector<float> &phongColor, const std::vector<float> &reflectionColor, const std::vector<float> &refractionColor, const Material &material, float effectiveReflectivity, float transparency)
@@ -228,6 +240,7 @@ std::vector<float> Tools::combineColors(const std::vector<float> &phongColor, co
     float reflectivity = material.is_reflective ? material.reflectivity : 0.0f;
     // Calculate the refraction factor
     float refractionFactor = material.is_refractive ? (1.0f - reflectivity) : 0.0f;
+    
     // Calculate the phong factor
     float phongFactor = 1.0f - effectiveReflectivity - transparency;
     if (phongFactor < 0.0f)
@@ -278,7 +291,7 @@ std::vector<float> Tools::traceRay(const Ray &ray, int depth, const std::string 
         // If there is an intersection
         if (intersected)
         {
-            // Calculate the view direction
+             // Calculate the view direction
             std::vector<float> viewDir = {
                 position[0] - intersectionPoint[0],
                 position[1] - intersectionPoint[1],
@@ -289,9 +302,9 @@ std::vector<float> Tools::traceRay(const Ray &ray, int depth, const std::string 
             float cos_theta = -(ray.direction[0] * normal[0] +
                                 ray.direction[1] * normal[1] +
                                 ray.direction[2] * normal[2]);
+
             // Calculate the phong color
             std::vector<float> phong_color = BlinnPhongShader::calculateColor(intersectionPoint, normal, viewDir, intersectedMaterial, lightsources, spheres, cylinders, triangles, uv_coordinates, useBVH ? bvh.get() : nullptr);
-
             // Initialize the reflection and refraction colors
             std::vector<float> reflectionColor = {0.0f, 0.0f, 0.0f};
             std::vector<float> refractionColor = {0.0f, 0.0f, 0.0f};
@@ -306,7 +319,7 @@ std::vector<float> Tools::traceRay(const Ray &ray, int depth, const std::string 
             if (intersectedMaterial.is_refractive)
             {
                 // Handle refraction
-                refractionColor = handleRefraction(ray, intersectionPoint, normal, intersectedMaterial, cos_theta, depth, rendermode);
+                refractionColor = handleRefraction(ray, intersectionPoint, normal, intersectedMaterial, cos_theta, depth, rendermode, uv_coordinates);
             }
             // Calculate the reflectivity
             float reflectivity = intersectedMaterial.is_reflective ? intersectedMaterial.reflectivity : 0.0f;
@@ -318,6 +331,7 @@ std::vector<float> Tools::traceRay(const Ray &ray, int depth, const std::string 
             float effectiveReflectivity = reflectivity * fresnel;
             // Combine the colors
             intersection_color = combineColors(phong_color, reflectionColor, refractionColor, intersectedMaterial, effectiveReflectivity, transparency);
+            
         }
     }
 
@@ -373,7 +387,7 @@ void Tools::render(PPMWriter &ppmwriter, std::string rendermode)
 
     // Parallelize the rendering
     #pragma omp parallel for collapse(2) schedule(dynamic)
-
+    
     // Iterate over the pixels
     for (int y = 0; y < height; ++y)
     {

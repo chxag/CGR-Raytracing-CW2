@@ -1,0 +1,85 @@
+{
+    "nbounces": 8,
+       "rendermode": "phong",
+       "bvh": true,
+       "camera": {
+           "type": "pinhole",
+           "width": 1200,
+           "height": 800,
+           "position": [0.0, 1.5, -4.0], 
+           "lookAt": [0.0, 0.5, 0.0],     
+           "upVector": [0.0, 1.0, 0.0],
+           "fov": 45.0,
+           "exposure": 0.1
+       },
+       "scene": {
+           "backgroundcolor": [0.25, 0.25, 0.25],
+           "lightsources": [
+               {
+                   "type": "pointlight",
+                   "position": [2.0, 2.0, -1.0],
+                   "intensity": [0.6, 0.6, 0.6]
+               },
+               {
+                   "type": "pointlight",
+                   "position": [-2.0, 2.0, -1.0],
+                   "intensity": [0.6, 0.6, 0.6]
+               }
+           ], "shapes": [
+            {
+                "type": "triangle",
+                "v0": [-1.5, 0.0, 0.0],
+                "v1": [-0.5, 1.0, 0.0],
+                "v2": [-0.5, 0.0, 0.0],
+                "material": {
+                    "ks": 0.1,
+                    "kd": 0.9,
+                    "specularexponent": 20,
+                    "diffusecolor": [1.0, 1.0, 1.0],
+                    "specularcolor": [1.0, 1.0, 1.0],
+                    "isreflective": false,
+                    "reflectivity": 0.0,
+                    "isrefractive": false,
+                    "refractiveindex": 1.0,
+                    "texture": "/Users/anupriyaagarwal/Desktop/Raytracing-CW2/CGR-Raytracing-CW2/Code/Textures/green_gradient.ppm"
+                }
+            },
+            {
+                "type": "triangle",
+                "v0": [-0.5, 0.0, 0.0],
+                "v1": [0.5, 1.0, 0.0],
+                "v2": [0.5, 0.0, 0.0],
+                "material": {
+                    "ks": 0.1,
+                    "kd": 0.9,
+                    "specularexponent": 20,
+                    "diffusecolor": [1.0, 1.0, 1.0],
+                    "specularcolor": [1.0, 1.0, 1.0],
+                    "isreflective": false,
+                    "reflectivity": 0.0,
+                    "isrefractive": false,
+                    "refractiveindex": 1.0,
+                    "texture": "/Users/anupriyaagarwal/Desktop/Raytracing-CW2/CGR-Raytracing-CW2/Code/Textures/wire.ppm"
+                }
+            },
+            {
+                "type": "triangle",
+                "v0": [0.5, 0.0, 0.0],
+                "v1": [1.5, 1.0, 0.0],
+                "v2": [1.5, 0.0, 0.0],
+                "material": {
+                    "ks": 0.1,
+                    "kd": 0.9,
+                    "specularexponent": 20,
+                    "diffusecolor": [1.0, 1.0, 1.0],
+                    "specularcolor": [1.0, 1.0, 1.0],
+                    "isreflective": false,
+                    "reflectivity": 0.0,
+                    "isrefractive": false,
+                    "refractiveindex": 1.0,
+                    "texture": "/Users/anupriyaagarwal/Desktop/Raytracing-CW2/CGR-Raytracing-CW2/Code/Textures/paper.ppm"
+                }
+            }
+        ]
+    }
+}

@@ -1,0 +1,103 @@
+{
+    "nbounces": 8,
+    "rendermode": "phong",
+    "bvh": true,
+    "lens_sampling": true,
+    "camera": {
+        "type": "pinhole",
+        "width": 1200,
+        "height": 800,
+        "position": [0.0, 1.5, -4.0],
+        "lookAt": [0.0, 0.5, 0.0],     
+        "upVector": [0.0, 1.0, 0.0],
+        "fov": 45.0,
+        "exposure": 0.1
+    },
+    "scene": {
+        "backgroundcolor": [0.25, 0.25, 0.25],
+        "lightsources": [
+            {
+                "type": "pointlight",
+                "position": [1.0, 3.0, -2.0],
+                "intensity": [0.7, 0.7, 0.7]
+            },
+            {
+                "type": "pointlight",
+                "position": [-1.0, 3.0, -2.0],
+                "intensity": [0.7, 0.7, 0.7]
+            }
+        ],
+        "shapes": [
+            {
+                "type": "sphere",
+                "center": [-1.0, 0.5, 0.0],
+                "radius": 0.3,
+                "material": {
+                    "ks": 0.3,
+                    "kd": 0.7,
+                    "specularexponent": 20,
+                    "diffusecolor": [0.8, 0.3, 0.3],
+                    "specularcolor": [1.0, 1.0, 1.0],
+                    "isreflective": false,
+                    "reflectivity": 0.0,
+                    "isrefractive": false,
+                    "refractiveindex": 1.0,
+                    "texture": "/Users/anupriyaagarwal/Desktop/Raytracing-CW2/CGR-Raytracing-CW2/Code/Textures/jupiter.ppm"
+                }
+            },
+            {
+                "type": "cylinder",
+                "center": [0.0, 0.5, 0.0],
+                "axis": [0, 1, 0],
+                "radius": 0.3,
+                "height": 0.6,
+                "material": {
+                    "ks": 0.3,
+                    "kd": 0.7,
+                    "specularexponent": 20,
+                    "diffusecolor": [0.3, 0.8, 0.3],
+                    "specularcolor": [1.0, 1.0, 1.0],
+                    "isreflective": false,
+                    "reflectivity": 0.0,
+                    "isrefractive": false,
+                    "refractiveindex": 1.0,
+                    "texture": "/Users/anupriyaagarwal/Desktop/Raytracing-CW2/CGR-Raytracing-CW2/Code/Textures/checkerboard.ppm"
+                }
+            },
+            {
+                "type": "triangle",
+                "v0": [1.0, 0.2, 0.0],
+                "v1": [1.3, 0.8, 0.0],
+                "v2": [1.6, 0.2, 0.0],
+                "material": {
+                    "ks": 0.3,
+                    "kd": 0.7,
+                    "specularexponent": 20,
+                    "diffusecolor": [0.3, 0.3, 0.8],
+                    "specularcolor": [1.0, 1.0, 1.0],
+                    "isreflective": true,
+                    "reflectivity": 0.3,
+                    "isrefractive": false,
+                    "refractiveindex": 1.0,
+                    "texture": "/Users/anupriyaagarwal/Desktop/Raytracing-CW2/CGR-Raytracing-CW2/Code/Textures/gradient.ppm"
+                }
+            },
+            {
+                "type": "sphere",
+                "center": [0, -25.0, 0],
+                "radius": 25.1,
+                "material": {
+                    "ks": 0.1,
+                    "kd": 0.9,
+                    "specularexponent": 10,
+                    "diffusecolor": [0.8, 0.8, 0.8],
+                    "specularcolor": [1.0, 1.0, 1.0],
+                    "isreflective": false,
+                    "reflectivity": 0.0,
+                    "isrefractive": false,
+                    "refractiveindex": 1.0
+                }
+            }
+        ]
+    }
+}
