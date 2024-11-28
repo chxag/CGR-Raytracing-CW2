@@ -5,28 +5,39 @@
 #include <chrono>
 #include <iostream>
 
+// Check if the ray intersects the AABB
 bool AABB::intersect(const Ray& ray, float& t_min) const {
-    float tmin = 0.0f;
+    float tmin = 0.0f; 
     float tmax = std::numeric_limits<float>::infinity();
 
+    // Iterate over each axis
     for (int i = 0; i < 3; i++) {
+        // Check if the ray is not parallel to the axis
         if (ray.direction[i] != 0.0f) {
+            // Calculate intersection distances
             float t1 = (min_point[i] - ray.origin[i]) / ray.direction[i];
             float t2 = (max_point[i] - ray.origin[i]) / ray.direction[i];
 
+            // Swap t1 and t2 if t1 is greater than t2
             if (t1 > t2) std::swap(t1, t2);
+
+            // Update tmin and tmax
             tmin = std::max(tmin, t1);
             tmax = std::min(tmax, t2);
             
+            // If tmax is less than or equal to tmin, no intersection
             if (tmax <= tmin) return false;
         } else if (ray.origin[i] < min_point[i] || ray.origin[i] > max_point[i]) {
             return false;
         }
     }
+    // Set t_min to the calculated minimum intersection distance
     t_min = tmin;
+    // Return true if there is an intersection
     return true;
 }
 
+// Expand the AABB to include another AABB
 void AABB::expandToInclude(const AABB& other) {
     for (int i = 0; i < 3; i++) {
         min_point[i] = std::min(min_point[i], other.min_point[i]);
@@ -34,6 +45,7 @@ void AABB::expandToInclude(const AABB& other) {
     }
 }
 
+// Expand the AABB to include a point
 void AABB::expandToInclude(const std::vector<float>& point) {
     for (int i = 0; i < 3; i++) {
         min_point[i] = std::min(min_point[i], point[i]);
@@ -41,6 +53,7 @@ void AABB::expandToInclude(const std::vector<float>& point) {
     }
 }
 
+// Build the BVH
 BVH::BVH(const std::vector<Sphere>& spheres, 
          const std::vector<Cylinder>& cylinders, 
          const std::vector<Triangle>& triangles) {
@@ -50,6 +63,7 @@ BVH::BVH(const std::vector<Sphere>& spheres,
     root = buildNode(spheres_copy, cylinders_copy, triangles_copy);
 }
 
+// Build a single node of the BVH
 std::unique_ptr<BVHNode> BVH::buildNode(std::vector<Sphere>& spheres,
                                        std::vector<Cylinder>& cylinders,
                                        std::vector<Triangle>& triangles) {
@@ -114,8 +128,10 @@ std::unique_ptr<BVHNode> BVH::buildNode(std::vector<Sphere>& spheres,
         }
     }
     
+    // Calculate the split point
     float split = (node->bounds.min_point[axis] + node->bounds.max_point[axis]) * 0.5f;
     
+    // Create vectors for left and right objects
     std::vector<Sphere> left_spheres, right_spheres;
     std::vector<Cylinder> left_cylinders, right_cylinders;
     std::vector<Triangle> left_triangles, right_triangles;
@@ -199,17 +215,20 @@ struct BVHTraversalComparator {
     }
 };
 
+// Intersect the ray with the BVH using the default background color
 ShaderResult BVH::intersect(const Ray& ray) const{
     std::vector<float> backgroundcolor = {0,0,0};
     return intersect(ray, backgroundcolor);
 }
 
+// Intersect the ray with the BVH
 ShaderResult BVH::intersect(const Ray& ray, const std::vector<float>& backgroundcolor) const {
 
     ShaderResult result;
     result.color = backgroundcolor;
     result.intersected = false;
     
+    // Define a stack entry for the BVH traversal
     struct StackEntry {
         BVHNode* node;
         float t_min;
@@ -218,20 +237,24 @@ ShaderResult BVH::intersect(const Ray& ray, const std::vector<float>& background
     StackEntry stack[64];  // Fixed-size stack
     int stack_ptr = 0;
     
+    // Check if the root node exists and if the ray intersects the root node's AABB
     float t_min;
     if (root && root->bounds.intersect(ray, t_min)) {
         stack[stack_ptr++] = {root.get(), t_min};
     }
-    
+
+    // Initialize the closest intersection distance
     float closest_t = std::numeric_limits<float>::max();
     
+    // Traverse the BVH
     while (stack_ptr > 0) {
         auto [node, t] = stack[--stack_ptr];
         
+        // Skip if the current intersection distance is greater than the closest intersection distance
         if (t >= closest_t) continue;
         
+        // Test all objects in leaf
         if (node->isLeaf()) {
-            // Test all objects in leaf
             for (const auto& sphere : node->spheres) {
                 float t;
                 if (sphere.intersectSphere(ray, t) && t < closest_t) {
@@ -318,7 +341,7 @@ ShaderResult BVH::intersect(const Ray& ray, const std::vector<float>& background
                     result.uv_coordinates = triangle.getUV(result.intersection_point);
                 }
             }
-        } else {
+        } else { // Traverse the BVH
             float t_left, t_right;
             bool hit_left = node->left->bounds.intersect(ray, t_left);
             bool hit_right = node->right->bounds.intersect(ray, t_right);
@@ -382,7 +405,7 @@ bool BVH::isOccluded(const Ray& ray, float maxDistance) const {
                     return true;  // Found occlusion, exit early
                 }
             }
-        } else {
+        } else { // Traverse the BVH
             float t_left, t_right;
             bool hit_left = node->left->bounds.intersect(ray, t_left);
             bool hit_right = node->right->bounds.intersect(ray, t_right);

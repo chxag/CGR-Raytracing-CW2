@@ -7,6 +7,7 @@
 #include <chrono>
 #include <iostream>
 
+// Calculate color for Blinn-Phong shader
 std::vector<float> BlinnPhongShader::calculateColor(const std::vector<float> &intersectionPoint,
                                                     const std::vector<float> &normal,
                                                     const std::vector<float> &viewDir,
@@ -20,6 +21,7 @@ std::vector<float> BlinnPhongShader::calculateColor(const std::vector<float> &in
 {
     std::vector<float> color = {0.0f, 0.0f, 0.0f};
 
+    // Get base color from material
     std::vector<float> baseColor = material.diffuse_color;
     if (material.texture && !uv_coordinates.empty())
     {
@@ -63,7 +65,7 @@ std::vector<float> BlinnPhongShader::calculateColor(const std::vector<float> &in
             inShadow = bvh->isOccluded(shadowRay, distanceToLight);
 
             if (inShadow) continue;
-        } else {
+        } else { // No BVH, perform intersection tests
             std::vector<float> shadowRayOrigin = {
                 intersectionPoint[0] + 0.001f* lightDir[0],
                 intersectionPoint[1] + 0.001f * lightDir[1],
@@ -100,8 +102,6 @@ std::vector<float> BlinnPhongShader::calculateColor(const std::vector<float> &in
         }
 
 
-        
-
         // Diffuse contribution
         float NdotL = normal[0] * lightDir[0] +
                       normal[1] * lightDir[1] +
@@ -137,6 +137,7 @@ std::vector<float> BlinnPhongShader::calculateColor(const std::vector<float> &in
     return color;
 };
 
+// Perform intersection tests for Blinn-Phong shader
 ShaderResult BlinnPhongShader::intersectionTests(const Ray &ray, 
                                                  const std::vector<Sphere> &spheres, 
                                                  const std::vector<Cylinder> &cylinders, 
@@ -160,34 +161,38 @@ ShaderResult BlinnPhongShader::intersectionTests(const Ray &ray,
         return bvh->intersect(ray, backgroundcolor);
     }
 
+    // Check intersection with spheres
     for (const auto &sphere : spheres)
     {
         float t;
+        //If the ray intersects the sphere and is closer
         if (sphere.intersectSphere(ray, t) && t < closestT)
         {
-            closestT = t;
-            intersected = true;
-            intersectedMaterial = sphere.material;
-            intersectionPoint = {ray.origin[0] + t * ray.direction[0],
+            closestT = t; // Update closest intersection distance
+            intersected = true; // Set intersected flag to true
+            intersectedMaterial = sphere.material; // Set intersected material to sphere material
+            intersectionPoint = {ray.origin[0] + t * ray.direction[0], // Calculate intersection point
                                  ray.origin[1] + t * ray.direction[1],
                                  ray.origin[2] + t * ray.direction[2]};
             normal = {intersectionPoint[0] - sphere.center[0],
                       intersectionPoint[1] - sphere.center[1],
                       intersectionPoint[2] - sphere.center[2]};
-            normalize(normal);
-            uv_coordinates = sphere.getUV(intersectionPoint);
+            normalize(normal); // Normalize normal vector
+            uv_coordinates = sphere.getUV(intersectionPoint); // Calculate UV coordinates
         }
     }
 
+    // Check intersection with cylinders
     for (const auto &cylinder : cylinders)
     {
         float t;
+        //If the ray intersects the cylinder and is closer
         if (cylinder.intersectCylinder(ray, t) && t < closestT)
         {
-            closestT = t;
-            intersected = true;
-            intersectedMaterial = cylinder.material;
-            intersectionPoint = {ray.origin[0] + t * ray.direction[0],
+            closestT = t; // Update closest intersection distance
+            intersected = true; // Set intersected flag to true 
+            intersectedMaterial = cylinder.material; // Set intersected material to cylinder material
+            intersectionPoint = {ray.origin[0] + t * ray.direction[0], // Calculate intersection point
                                  ray.origin[1] + t * ray.direction[1],
                                  ray.origin[2] + t * ray.direction[2]};
 
@@ -211,23 +216,25 @@ ShaderResult BlinnPhongShader::intersectionTests(const Ray &ray,
                     pc[1] - dot * cylinder.axis[1],
                     pc[2] - dot * cylinder.axis[2]};
             }
-            normalize(normal);
-            uv_coordinates = cylinder.getUV(intersectionPoint);
+            normalize(normal); // Normalize normal vector
+            uv_coordinates = cylinder.getUV(intersectionPoint); // Calculate UV coordinates
         }
     }
 
+    // Check intersection with triangles
     for (const auto &triangle : triangles)
     {
         float t;
+        //If the ray intersects the triangle and is closer
         if (triangle.intersectTriangle(ray, t) && t < closestT)
         {
-            closestT = t;
-            intersected = true;
-            intersectedMaterial = triangle.material;
-            intersectionPoint = {ray.origin[0] + t * ray.direction[0],
+            closestT = t; // Update closest intersection distance
+            intersected = true; // Set intersected flag to true
+            intersectedMaterial = triangle.material; // Set intersected material to triangle material
+            intersectionPoint = {ray.origin[0] + t * ray.direction[0], // Calculate intersection point
                                  ray.origin[1] + t * ray.direction[1],
                                  ray.origin[2] + t * ray.direction[2]};
-            std::vector<float> edge1 = {triangle.v1[0] - triangle.v0[0],
+            std::vector<float> edge1 = {triangle.v1[0] - triangle.v0[0], // Calculate edge vectors
                                         triangle.v1[1] - triangle.v0[1],
                                         triangle.v1[2] - triangle.v0[2]};
             std::vector<float> edge2 = {triangle.v2[0] - triangle.v0[0],
@@ -236,10 +243,11 @@ ShaderResult BlinnPhongShader::intersectionTests(const Ray &ray,
             normal = {edge1[1] * edge2[2] - edge1[2] * edge2[1],
                       edge1[2] * edge2[0] - edge1[0] * edge2[2],
                       edge1[0] * edge2[1] - edge1[1] * edge2[0]};
-            normalize(normal);
-            uv_coordinates = triangle.getUV(intersectionPoint);
+            normalize(normal); // Normalize normal vector
+            uv_coordinates = triangle.getUV(intersectionPoint); // Calculate UV coordinates
         }
     }
 
+    // Return intersection color, flag, and material properties, intersection point, normal, and UV coordinates
     return {intersected_color, intersected, intersectionPoint, intersectedMaterial, normal, uv_coordinates};
 }

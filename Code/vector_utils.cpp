@@ -1,5 +1,7 @@
 #include "vector_utils.h"
+#include <cmath>
 
+// Function to normalize a vector
 void normalize(std::vector<float> &vec)
 {
     float length = sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
@@ -12,6 +14,7 @@ void normalize(std::vector<float> &vec)
     }
 }
 
+// Function to reflect a vector
 std::vector<float> reflect(const std::vector<float> &incident, const std::vector<float> &normal)
 {
     float dot = incident[0] * normal[0] + incident[1] * normal[1] + incident[2] * normal[2];
@@ -22,6 +25,7 @@ std::vector<float> reflect(const std::vector<float> &incident, const std::vector
     return reflected;
 }
 
+// Function to refract a vector
 std::vector<float> refract(const std::vector<float> &incident, const std::vector<float> &normal, float eta_ratio)
 {
     float cos_theta = -(incident[0] * normal[0] + incident[1] * normal[1] + incident[2] * normal[2]);
